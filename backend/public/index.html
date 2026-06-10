@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Restoran Menyu</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f5f5f5;
+      color: #333;
+    }
+
+    header {
+      background: #e63946;
+      color: white;
+      text-align: center;
+      padding: 20px;
+    }
+
+    header h1 { font-size: 24px; }
+    header p { font-size: 14px; opacity: 0.8; margin-top: 5px; }
+
+    .kateqoriyalar {
+      display: flex;
+      gap: 10px;
+      padding: 15px;
+      overflow-x: auto;
+    }
+
+    .kateqoriya-btn {
+      background: white;
+      border: 2px solid #e63946;
+      color: #e63946;
+      padding: 8px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      white-space: nowrap;
+      font-size: 14px;
+    }
+
+    .kateqoriya-btn.aktiv {
+      background: #e63946;
+      color: white;
+    }
+
+    .mehsullar {
+      padding: 15px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+
+    .kart {
+      background: white;
+      border-radius: 12px;
+      padding: 15px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .kart h3 { font-size: 15px; margin-bottom: 5px; }
+    .kart p { font-size: 12px; color: #888; margin-bottom: 10px; }
+    .qiymet { color: #e63946; font-weight: bold; font-size: 16px; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🍽️ Restoran Adı</h1>
+    <p>Dadlı yeməklər, sərfəli qiymətlər</p>
+  </header>
+
+  <div class="kateqoriyalar" id="kateqoriyalar">
+    <button class="kateqoriya-btn aktiv" onclick="filter('hamısı')">Hamısı</button>
+  </div>
+
+  <div class="mehsullar" id="mehsullar">
+    <p style="padding:20px">Yüklənir...</p>
+  </div>
+
+  <script>
+    let butunMehsullar = [];
+
+    async function menuYuklə() {
+      const res = await fetch('/api/menu');
+      butunMehsullar = await res.json();
+      kateqoriyaGoster(butunMehsullar);
+      mehsulGoster(butunMehsullar);
+    }
+
+    function kateqoriyaGoster(items) {
+      const kateqoriyalar = [...new Set(items.map(i => i.kateqoriya))];
+      const div = document.getElementById('kateqoriyalar');
+      kateqoriyalar.forEach(k => {
+        const btn = document.createElement('button');
+        btn.className = 'kateqoriya-btn';
+        btn.textContent = k;
+        btn.onclick = () => filter(k);
+        div.appendChild(btn);
+      });
+    }
+
+    function filter(kateqoriya) {
+      document.querySelectorAll('.kateqoriya-btn').forEach(b => b.classList.remove('aktiv'));
+      event.target.classList.add('aktiv');
+      
+      const filtered = kateqoriya === 'hamısı' 
+        ? butunMehsullar 
+        : butunMehsullar.filter(i => i.kateqoriya === kateqoriya);
+      
+      mehsulGoster(filtered);
+    }
+
+    function mehsulGoster(items) {
+      const div = document.getElementById('mehsullar');
+      if (items.length === 0) {
+        div.innerHTML = '<p style="padding:20px">Məhsul tapılmadı</p>';
+        return;
+      }
+      div.innerHTML = items.map(item => `
+        <div class="kart">
+          <h3>${item.ad}</h3>
+          <p>${item.təsvir || ''}</p>
+          <span class="qiymet">${item.qiymət} ₼</span>
+        </div>
+      `).join('');
+    }
+
+    menuYuklə();
+  </script>
+
+</body>
+</html>

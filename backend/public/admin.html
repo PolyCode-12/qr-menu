@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f5f5f5;
+    }
+
+    header {
+      background: #1d3557;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .container { padding: 20px; max-width: 800px; margin: 0 auto; }
+
+    .form-kart {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      margin-bottom: 30px;
+    }
+
+    .form-kart h2 { margin-bottom: 15px; color: #1d3557; }
+
+    input, textarea, select {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+
+    .btn-əlavə-et {
+      background: #1d3557;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 15px;
+      width: 100%;
+    }
+
+    .btn-əlavə-et:hover { background: #457b9d; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    th {
+      background: #1d3557;
+      color: white;
+      padding: 12px;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    td { padding: 12px; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
+
+    tr:last-child td { border-bottom: none; }
+
+    .btn-sil {
+      background: #e63946;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .mesaj {
+      background: #a8dadc;
+      color: #1d3557;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      display: none;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+<header style="display:flex; align-items:center; justify-content:space-between; padding: 20px 30px;">
+    <h1>⚙️ Admin Panel</h1>
+    <button onclick="çıxış()" style="background:#e63946; color:white; border:none; padding:8px 16px; border-radius:8px; cursor:pointer;">Çıxış</button>
+</header>
+
+  <div class="container">
+
+    <div class="form-kart">
+      <h2>Yeni Yemək Əlavə Et</h2>
+      <div class="mesaj" id="mesaj">✅ Əlavə edildi!</div>
+      <input type="text" id="ad" placeholder="Yemək adı" />
+      <input type="number" id="qiymet" placeholder="Qiymət (₼)" step="0.01" />
+      <input type="text" id="kateqoriya" placeholder="Kateqoriya (məs: Şorbalar)" />
+      <textarea id="təsvir" placeholder="Təsvir (isteğe bağlı)" rows="2"></textarea>
+      <button class="btn-əlavə-et" onclick="əlavəEt()">➕ Əlavə Et</button>
+    </div>
+
+    <h2 style="margin-bottom:15px; color:#1d3557">Mövcud Yeməklər</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Ad</th>
+          <th>Kateqoriya</th>
+          <th>Qiymət</th>
+          <th>Sil</th>
+        </tr>
+      </thead>
+      <tbody id="cədvəl"></tbody>
+    </table>
+
+  </div>
+
+  <script>
+    const token = localStorage.getItem('token');
+if (!token) {
+  window.location.href = '/login.html';
+}
+    async function siyahıYuklə() {
+      const res = await fetch('/api/menu');
+      const items = await res.json();
+      const tbody = document.getElementById('cədvəl');
+      tbody.innerHTML = items.map(item => `
+        <tr>
+          <td>${item.ad}</td>
+          <td>${item.kateqoriya}</td>
+          <td>${item.qiymət} ₼</td>
+          <td><button class="btn-sil" onclick="sil('${item._id}')">Sil</button></td>
+        </tr>
+      `).join('');
+    }
+
+    async function əlavəEt() {
+      const ad = document.getElementById('ad').value;
+      const qiymət = document.getElementById('qiymet').value;
+      const kateqoriya = document.getElementById('kateqoriya').value;
+      const təsvir = document.getElementById('təsvir').value;
+
+      if (!ad || !qiymət || !kateqoriya) {
+        alert('Ad, qiymət və kateqoriya mütləqdir!');
+        return;
+      }
+
+      await fetch('/api/menu', {
+  method: 'POST',
+  headers: { 
+    'Content-Type': 'application/json',
+    'authorization': token
+  },
+  body: JSON.stringify({ ad, qiymət: parseFloat(qiymət), kateqoriya, təsvir })
+});
+      document.getElementById('ad').value = '';
+      document.getElementById('qiymet').value = '';
+      document.getElementById('kateqoriya').value = '';
+      document.getElementById('təsvir').value = '';
+
+      const mesaj = document.getElementById('mesaj');
+      mesaj.style.display = 'block';
+      setTimeout(() => mesaj.style.display = 'none', 2000);
+
+      siyahıYuklə();
+    }
+
+    async function sil(id) {
+      if (!confirm('Silmək istəyirsiniz?')) return;
+        await fetch(`/api/menu/${id}`, { 
+  method: 'DELETE',
+  headers: { 'authorization': token }
+});
+      siyahıYuklə();
+    }
+    function çıxış() {
+  localStorage.removeItem('token');
+  window.location.href = '/login.html';
+}
+
+    siyahıYuklə();
+  </script>
+
+</body>
+</html>

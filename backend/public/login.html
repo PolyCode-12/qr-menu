@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Giriş</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #1d3557;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .kart {
+      background: white;
+      padding: 40px;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    }
+
+    h1 {
+      text-align: center;
+      color: #1d3557;
+      margin-bottom: 8px;
+      font-size: 24px;
+    }
+
+    p {
+      text-align: center;
+      color: #888;
+      margin-bottom: 25px;
+      font-size: 14px;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 15px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 15px;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #1d3557;
+    }
+
+    button {
+      width: 100%;
+      padding: 13px;
+      background: #1d3557;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:hover { background: #457b9d; }
+
+    .xeta {
+      background: #ffe0e0;
+      color: #e63946;
+      padding: 10px;
+      border-radius: 8px;
+      text-align: center;
+      margin-bottom: 15px;
+      font-size: 14px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="kart">
+    <h1>⚙️ Admin Giriş</h1>
+    <p>Davam etmək üçün giriş edin</p>
+
+    <div class="xeta" id="xeta"></div>
+
+    <input type="text" id="istifadəçiAdı" placeholder="İstifadəçi adı" />
+    <input type="password" id="şifrə" placeholder="Şifrə" />
+    <button onclick="girisEt()">Giriş Et</button>
+  </div>
+
+  <script>
+    // Artıq token varsa admin panelə yönləndir
+    if (localStorage.getItem('token')) {
+      window.location.href = '/admin.html';
+    }
+
+    async function girisEt() {
+      const istifadəçiAdı = document.getElementById('istifadəçiAdı').value;
+      const şifrə = document.getElementById('şifrə').value;
+
+      if (!istifadəçiAdı || !şifrə) {
+        xetaGoster('Bütün sahələri doldurun!');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ istifadəçiAdı, şifrə })
+        });
+
+        const data = await res.json();
+
+        if (data.token) {
+          localStorage.setItem('token', data.token);
+          window.location.href = '/admin.html';
+        } else {
+          xetaGoster(data.xəta);
+        }
+      } catch (err) {
+        xetaGoster('Server xətası!');
+      }
+    }
+
+    function xetaGoster(mesaj) {
+      const div = document.getElementById('xeta');
+      div.textContent = mesaj;
+      div.style.display = 'block';
+    }
+  </script>
+
+</body>
+</html>
